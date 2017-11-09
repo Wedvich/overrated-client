@@ -14,10 +14,12 @@ namespace overrated_client
     {
         private bool _gameRunning;
         private readonly Screenshotter _screenshotter;
+        private readonly ScreenshotParser _parser;
 
         public Client()
         {
             _screenshotter = new Screenshotter();
+            _parser = new ScreenshotParser();
         }
 
         public void StartPolling()
@@ -32,10 +34,10 @@ namespace overrated_client
                 Console.WriteLine("Process found! Doing some kind of loop while game is running...");
                 while (_gameRunning)
                 {
-                    Console.WriteLine("Game running...");
-                    var bitmap = new Bitmap(_screenshotter.CaptureWindow(process.MainWindowHandle));
-                    var img = bitmap.Clone(new Rectangle(0, 0, 245, 25), bitmap.PixelFormat);
-                    img.Save("cropped.jpg", ImageFormat.Jpeg);
+                    using (var screenshot = new Bitmap(_screenshotter.CaptureWindow(process.MainWindowHandle)))
+                    {
+                        Console.WriteLine(_parser.GetFpsFromImage(screenshot));
+                    }
                     Thread.Sleep(3000);
                 }
             }
@@ -47,7 +49,7 @@ namespace overrated_client
             {
                 return Process.GetProcessesByName("Overwatch")[0];
             }
-            catch (IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException)
             {
                 Console.WriteLine("Overwatch process not found. Retrying in 5 seconds.");
                 Thread.Sleep(5000);
